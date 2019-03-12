@@ -1,0 +1,22 @@
+{
+  "name": "mtaa_server",
+  "version": "1.0.0",
+  "description": "\"# MTAA_server\"",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FilipBakos/MTAA_server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/FilipBakos/MTAA_server/issues"
+  },
+  "homepage": "https://github.com/FilipBakos/MTAA_server#readme",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}

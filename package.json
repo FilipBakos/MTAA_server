@@ -17,6 +17,10 @@
   },
   "homepage": "https://github.com/FilipBakos/MTAA_server#readme",
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "mongoose": "^5.4.19",
+    "pg": "^7.9.0",
+    "pg-hstore": "^2.3.2",
+    "sequelize": "^5.1.0"
   }
 }

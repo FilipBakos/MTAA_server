@@ -1,5 +1,9 @@
 var express = require('express')
-const {group, event, user, userGroups} = require('../models/');
+const {group, event, user, userGroups, authtoken} = require('../models/');
+const userController = require('../controllers/userController.js');
+const groupController = require('../controllers/groupController.js');
+
+const bcrypt = require('bcrypt');
 // const models = require( '../models/index');
 // const 
 
@@ -24,7 +28,7 @@ const {group, event, user, userGroups} = require('../models/');
 // 	name: 'Fiit1',
 // 	description: 'Fiit skupina',
 // 	main: false
-// }).then(() => console.log("Worked"));
+// }).then((res) => console.log(res.dataValues));
 
 //Vytvori usera
 // user.create({
@@ -75,16 +79,19 @@ const {group, event, user, userGroups} = require('../models/');
 //       console.log('asdasdasd')
 //     })
 
-user.findAll({
-	    include: [{
-	    	as: 'usersGroups',
-	    	model: group
-	    }]
-	})
-	.then(response => {
-		console.log(response);
+// user.findAll({
+// 		where: {
+// 	  		name: 'filip'
+// 			},
+// 	    include: [{
+// 	    	as: 'usersGroups',
+// 	    	model: group
+// 	    }]
+// 	})
+// 	.then((user) => {
+// 		console.log(user[0].dataValues.usersGroups[0].dataValues);
 
-	}).catch(error => console.log(error));
+// 	}).catch(error => console.log(error));
 
 // group.create({
 // 	name: 'Fiit1',
@@ -92,6 +99,8 @@ user.findAll({
 // 	main: false
 // }).then(() => console.log("Worked"));
 
+
+//authtoken.generate(1);
  
 var app = express();
 
@@ -143,14 +152,41 @@ app.delete('/event/:id/delete', (req, res) => {
 
 //CREATE USER
 app.post('/user/register', (req, res) => {
-	console.log(req.body);
-	res.send("Creating user");
+
+	bcrypt.hash(req.body.password, 10,(err, hash) => {
+	  req.body.password = hash;
+	  //Najskor vytvori groupu a potom user a priradi mu tu groupu
+	  group.create({
+	  	name: req.body.name + " main",
+	  	description: req.body.name + " main group"
+	  }).then((group) => {
+	  	req.body.mainGroupId = group.dataValues.id;
+	  	user.create(req.body)
+	  	.then((user) => {
+	  		groupController.createAssociation(group.dataValues.id, user.dataValues.id, res);
+	  	})
+	  	.catch(error => console.log(error));
+	  }).catch(error => console.log(error));
+	  
+	});
+
 });
 
 //LOGIN USER
 app.post('/user/login', (req, res) => {
-	console.log(req.body);
-	res.send("Logging in");
+	const { username, password } = req.body;
+
+	if (!username || !password) {
+	  return res.status(400).send(
+	    'No username or password'
+	  );
+	}
+
+	console.log(username);
+
+	userController.authenticate(username, password, res);
+	// console.log(req.body);
+	// res.send("Logging in");
 });
 
 //GET DATA

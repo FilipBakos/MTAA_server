@@ -21,27 +21,29 @@ const getAllEventsByGroup = (userId, res) => {
 }
 
 // oseka z databazy len to co treba
-const getGroups = (groups, callback) => {
+const getEvents = (events, callback) => {
 
-	let groupsShort = [];
+	let eventsShort = [];
 
-	groups.forEach((group) => {
+	events.forEach((event) => {
 	  let obj = {
-	  	id: group.dataValues.id,
-	  	name: group.dataValues.name,
-	  	description: group.dataValues.description,
-	  	mainUserId: group.dataValues.mainUserId,
+	  	id: event.dataValues.id,
+	  	name: event.dataValues.name,
+	  	description: event.dataValues.description,
+	  	link_data: event.dataValues.link_data,
+	  	date: event.dataValues.date
 	  }
-	  groupsShort.push(obj);
+	  eventsShort.push(obj);
 	});
-	callback(groupsShort);
-	return groupsShort;
+	callback(eventsShort);
+	return eventsShort;
 }
 
 
 
 
 module.exports = {
-	getAllEventsByGroup
+	getAllEventsByGroup,
+	getEvents
 }
 

@@ -2,11 +2,8 @@ var express = require('express')
 const {group, event, user, userGroups, authtoken} = require('../models/');
 const userController = require('../controllers/userController.js');
 const groupController = require('../controllers/groupController.js');
-
+const eventController = require('../controllers/eventController.js');
 const bcrypt = require('bcrypt');
-// const models = require( '../models/index');
-// const 
-
 
 
 // VYTVORI GROUPU A AJ EVENT
@@ -165,15 +162,24 @@ app.delete('/group/:id/delete', (req, res) => {
 });
 
 
-
-//CREATE EVENT
+//CREATE EVENT -done
 app.post('/event/create', (req, res) => {
 	const token = req.headers.authorization;
 	const id = req.headers.id;
 	userController.isLogged(id, token)
 	.then((result) => {
 		if(result) {
-			groupController.getAllGroupsByUser(id, res);
+			event.create({
+				name: req.body.name,
+				date: req.body.date,
+				description: req.body.description,
+				link_data: '',
+				groupId: req.body.groupId
+			})
+			.then((event) => {
+				res.status(200).send("OK");
+			})
+			.catch(error => console.log(error));
 		}
 		else {
 			res.status(400).send('Not logged in');
@@ -181,10 +187,32 @@ app.post('/event/create', (req, res) => {
 	});
 });
 
-//LIST EVENT
-app.get('/event/list', (req, res) => {
-	console.log(req.body);
-	res.send("Listing events");
+//LIST EVENT - listne vsetky eventy danej groupy - done
+app.get('/event/:id/list', (req, res) => {
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	const groupId = req.params.id;
+	userController.isLogged(id, token)
+	.then((result) => {
+		if(result) {
+			event.findAll({
+				where:{
+					groupId: groupId
+				}
+			}).then((events) => {
+				if ( events.length > 0 ) {
+					eventController.getEvents(events, (obj) => {
+						res.status(200).send(obj)
+					})
+				} else {
+					res.status(400).send('Cvosi sa porantalo');
+				}
+			})
+		}
+		else {
+			res.status(400).send('Not logged in');
+		}
+	});
 });
 
 //UPDATE EVENT

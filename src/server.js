@@ -108,11 +108,55 @@ const port = 3000;
 
 app.use(express.json());
 
-//CREATE GROUP
-app.post('/group/create', (req, res) => {
-	console.log(req.body.name);
-	res.send("Creating group");
+//CREATE USER - done
+app.post('/user/register', (req, res) => {
+
+	bcrypt.hash(req.body.password, 10,(err, hash) => {
+	  req.body.password = hash;
+	  //Najskor vytvori groupu a potom user a priradi mu tu groupu
+	  group.create({
+	  	name: req.body.name + " main",
+	  	description: req.body.name + " main group"
+	  }).then((group) => {
+	  	req.body.mainGroupId = group.dataValues.id;
+	  	user.create(req.body)
+	  	.then((user) => {
+	  		groupController.createAssociation(group.dataValues.id, user.dataValues.id, res);
+	  	})
+	  	.catch(error => console.log(error));
+	  }).catch(error => console.log(error));
+	  
+	});
 });
+
+//LOGIN USER - done
+app.post('/user/login', (req, res) => {
+	const { username, password } = req.body;
+
+	if (!username || !password) {
+	  return res.status(400).send(
+	    'No username or password'
+	  );
+	}
+
+	console.log(username);
+
+	userController.authenticate(username, password, res);
+	// console.log(req.body);
+	// res.send("Logging in");
+});
+
+
+
+//MIDDLEWARE - testuje ci prisla hlavicka s id usera a auth toknenom
+app.use(function(req, res, next) {
+  if (!req.headers.authorization || !req.headers.id) {
+    return res.status(400).send('Neprisla hlavicka');
+  }
+  next();
+});
+
+
 
 //DELETE GROUP
 app.delete('/group/:id/delete', (req, res) => {
@@ -120,16 +164,21 @@ app.delete('/group/:id/delete', (req, res) => {
 	res.send(`Deleting group with id: ${req.params.id.toString()}`);
 });
 
-//LIST GROUP
-app.get('/group/list', (req, res) => {
-	console.log(req.body);
-	res.send("Listing groups");
-});
+
 
 //CREATE EVENT
 app.post('/event/create', (req, res) => {
-	console.log(req.body);
-	res.send("Creating event");
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	userController.isLogged(id, token)
+	.then((result) => {
+		if(result) {
+			groupController.getAllGroupsByUser(id, res);
+		}
+		else {
+			res.status(400).send('Not logged in');
+		}
+	});
 });
 
 //LIST EVENT
@@ -150,44 +199,7 @@ app.delete('/event/:id/delete', (req, res) => {
 	res.send(`Deleting event with id: ${req.params.id.toString()}`);
 });
 
-//CREATE USER
-app.post('/user/register', (req, res) => {
 
-	bcrypt.hash(req.body.password, 10,(err, hash) => {
-	  req.body.password = hash;
-	  //Najskor vytvori groupu a potom user a priradi mu tu groupu
-	  group.create({
-	  	name: req.body.name + " main",
-	  	description: req.body.name + " main group"
-	  }).then((group) => {
-	  	req.body.mainGroupId = group.dataValues.id;
-	  	user.create(req.body)
-	  	.then((user) => {
-	  		groupController.createAssociation(group.dataValues.id, user.dataValues.id, res);
-	  	})
-	  	.catch(error => console.log(error));
-	  }).catch(error => console.log(error));
-	  
-	});
-
-});
-
-//LOGIN USER
-app.post('/user/login', (req, res) => {
-	const { username, password } = req.body;
-
-	if (!username || !password) {
-	  return res.status(400).send(
-	    'No username or password'
-	  );
-	}
-
-	console.log(username);
-
-	userController.authenticate(username, password, res);
-	// console.log(req.body);
-	// res.send("Logging in");
-});
 
 //GET DATA
 app.post('/data/get', (req, res) => {
@@ -199,4 +211,53 @@ app.listen(port, () => {
 	console.log('App is on port ',port);
 });
 
+//Spravene
+
+//LOGOUT USER
+app.post('/user/logout', (req, res) => {
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	userController.logout(id, token, res);
+});
+
+//CREATE GROUP
+app.post('/group/create', (req, res) => {
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	userController.isLogged(id, token)
+		.then((result) => {
+			if(result) {
+				group.create({
+					name: req.body.name,
+					description: req.body.description,
+					mainUserId: id
+				}).then((group) => {
+					userGroups.create({
+						userId: id,
+						groupId: group.dataValues.id
+					}).then(() => {
+						res.status(200).send('Group was created')
+					}).catch(error => res.status(400).send(error))
+				}).catch(error => res.status(400).send(error))
+			}
+			else {
+				res.status(400).send('Not logged in');
+			}
+		});
+});
+
+//LIST GROUP
+app.get('/group/list', (req, res) => {
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	userController.isLogged(id, token)
+	.then((result) => {
+		if(result) {
+			groupController.getAllGroupsByUser(id, res);
+		}
+		else {
+			res.status(400).send('Not logged in');
+		}
+	});
+});
 

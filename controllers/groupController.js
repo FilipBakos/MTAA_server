@@ -1,7 +1,23 @@
 const {group, event, user, userGroups, authtoken} = require('../models/');
+const userController = require('./userController.js');
 
-const getAllGroupsOfUser = (userId) => {
 
+const getAllGroupsByUser = (userId, res) => {
+	user.findAll({
+		where: {
+	  		id: userId
+			},
+	    include: [{
+	    	as: 'usersGroups',
+	    	model: group
+	    }]
+	})
+	.then((result) => {
+		userController.getGroups(result[0].usersGroups, (groups) => {
+			res.status(200).send(groups)
+		})
+	})
+	.catch(error => console.log(error))
 }
 
 const createAssociation = (groupId, userId, res) => {
@@ -19,7 +35,9 @@ const createAssociation = (groupId, userId, res) => {
 
 
 
+
 module.exports = {
-	createAssociation
+	createAssociation,
+	getAllGroupsByUser
 }
 

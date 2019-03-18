@@ -6,12 +6,12 @@ const bcrypt = require('bcrypt');
 
 const generate = function(userId, callback) {
     uidgen.generate((err, uid) => {
-	  if (err) throw err;
-	  console.log("UID : ",uid); 
-	  return authtoken.create({
-	   token: uid,
-	   userId 
-		}).then(() => {
+		if (err) throw err;
+		return authtoken.create({
+			 token: uid,
+			 userId 
+		})
+		.then(() => {
 			let obj = {
 			  id: userId,
 			  authToken: uid
@@ -35,32 +35,71 @@ const authenticate = function (username, password, res) {
 	    	model: group
 	    }]
 	})
-	  .then( userResponse => {
-	  	if (userResponse.length === 0) 
-		  	res.status(400).send(
-			    'Wrong username'
-			);
-	    bcrypt.compare(password, userResponse[0].dataValues.password, function(err, result) {
-		   	if (result === false) {
-		   		res.status(400).send(
+	.then( userResponse => {
+		if (userResponse.length === 0) 
+	  	res.status(400).send(
+		    'Wrong username'
+		);
+	  	bcrypt.compare(password, userResponse[0].dataValues.password, function(err, result) {
+	  	 	if (result === false) {
+	  	 		res.status(400).send(
 				    'Wrong password'
 				);
-		   	}
-		   	if (result === true) {
-		   		getGroups(userResponse[0].usersGroups, (groups) => {
-		   			authorize(userResponse[0].dataValues.id, (obj) => {
-		   				obj.name = username,
-		   				obj.groups = groups,
-		   				res.status(200).send(obj);
-		   			}) 
-		   		})
-		   	}
-		});
-	  })
-	  .catch( error => {
-	    console.log(error)
-	  });
+	  	 	}
+	  	 	if (result === true) {
+	  	 		getGroups(userResponse[0].usersGroups, (groups) => {
+	  	 			authorize(userResponse[0].dataValues.id, (obj) => {
+	  	 				obj.name = username,
+	  	 				obj.groups = groups,
+	  	 				res.status(200).send(obj);
+	  	 			}) 
+	  	 		})
+	  	 	}
+	  	});
+	})
+	.catch( error => {
+	  console.log(error)
+	});
 };
+
+const isLogged = function (id, token, res){
+	return new Promise(function(resolve, reject) {
+        authtoken.findAll({
+			where: {
+				userId: id,
+				token: token
+			}
+		})
+		.then((result) => {
+			if(result.length === 0) {
+				resolve(false);
+			} else resolve(true);
+		})
+		.catch(error => {
+			reject(error);
+		})
+    })
+}
+
+
+const logout = (id, token, res) => {
+	authtoken.destroy({
+	    where: {
+	        userId: id,
+	        token: token
+	    }
+	})
+	.then((result) => {
+		console.log(result)
+		if (result)
+			res.status(200).send('logged out')
+		else 
+			res.status(400).send('Not logged out')
+	})
+	.catch(error => res.status(400).send('Error'));
+}
+
+
 
 // oseka z databazy len to co treba
 const getGroups = (groups, callback) => {
@@ -83,6 +122,9 @@ const getGroups = (groups, callback) => {
 module.exports = {
 	generate,
 	authorize,
-	authenticate
+	authenticate,
+	isLogged,
+	logout,
+	getGroups
 };
 

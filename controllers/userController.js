@@ -102,22 +102,29 @@ const logout = (id, token, res) => {
 
 
 // oseka z databazy len to co treba
-const getGroups = (groups, callback) => {
+const getGroups = (groups, userId, callback) => {
 
-	let groupsShort = [];
-
+	let groupsOwned = [];
+	let groupsConnected = [];
 	groups.forEach((group) => {
-	  let obj = {
-	  	id: group.dataValues.id,
-	  	name: group.dataValues.name,
-	  	description: group.dataValues.description,
-	  	mainUserId: group.dataValues.mainUserId,
-	  	main: group.dataValues.main
-	  }
-	  groupsShort.push(obj);
+		let obj = {
+			id: group.dataValues.id,
+			name: group.dataValues.name,
+			description: group.dataValues.description,
+			mainUserId: group.dataValues.mainUserId,
+			main: group.dataValues.main
+		}
+		if(group.dataValues.mainUserId === parseInt(userId)) {
+			groupsOwned.push(obj);
+		} else groupsConnected.push(obj);
 	});
-	callback(groupsShort);
-	return groupsShort;
+
+	let obj = {
+		groupsOwned,
+		groupsConnected
+	}
+	callback(obj);
+	return obj;
 }
 
 module.exports = {

@@ -13,7 +13,7 @@ const getAllGroupsByUser = (userId, res) => {
 	    }]
 	})
 	.then((result) => {
-		userController.getGroups(result[0].usersGroups, (groups) => {
+		userController.getGroups(result[0].usersGroups,userId, (groups) => {
 			res.status(200).send(groups)
 		})
 	})

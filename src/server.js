@@ -99,8 +99,36 @@ const bcrypt = require('bcrypt');
 // event.findByPk(5).then((event) => console.log(event));
 
 
+// event.update({name: 'Fiit event'}, {
+// 				returning: true,
+// 				where:{
+// 					id:250
+// 				}
+// 			})
+// 			.then((event) => {
+// 				console.log(event[0]);
+// 			})
+// 			
 //authtoken.generate(1);
- 
+
+
+
+//////////////////////////
+/////////////////////////	raw: true,
+///////////////////////
+
+
+
+userGroups.findOrCreate({
+	raw:true,
+	where: {
+		groupId: 50,
+		userId: 1
+	}
+}).then((result) => {
+	console.log(result);
+})
+
 var app = express();
 
 const port = 3000; 
@@ -203,6 +231,44 @@ app.delete('/group/:id/delete', (req, res) => {
 
 });
 
+app.put('/user/:id/connect', (req, res) => {
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	const groupId = req.params.id;
+	let groupResult;
+	userController.isLogged(id, token)
+	.then((result) => {
+		return group.findAll({
+			raw: true,
+			where: {
+				id: groupId
+			}
+		})
+	}, (error) => {
+        throw new Error(error);
+    })
+    .then((group) => {
+    	console.log(group)
+   //  	if(group.length ===1 ){
+   //  		groupResult = group;
+   //  		return userGroups.findAll({
+			// 	raw: true,
+			// 	where:{
+			// 		groupId: groupId,
+			// 		userId: id
+			// 	}
+			// })
+   //  	}
+    })
+    // .then((result) => {
+    // 	res.status(200).send('Pripojeny na DB');
+    // })
+	.catch(error => {
+		res.status(400).send(`error: , ${error}`);
+	});
+
+});
+
 
 //CREATE EVENT -done
 app.post('/event/create', (req, res) => {
@@ -250,10 +316,54 @@ app.get('/event/:id/list', (req, res) => {
 	
 });
 
-//UPDATE EVENT
-app.post('/event/:id/update', (req, res) => {
-	console.log(req.body);
-	res.send(`Updating event with id: ${req.params.id.toString()}`);
+//UPDATE EVENT--done
+app.put('/event/:id/update', (req, res) => {
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	const eventId = req.params.id;
+	userController.isLogged(id, token)
+	.then((result) => {
+		return event.findByPk(eventId)
+	}, (error) => {
+        throw new Error(error);
+    })
+	.then((event) => {
+		if(event !== null){
+			return group.findByPk(event.dataValues.groupId)
+		} else {
+			throw new Error("Nie je taky event")
+		}
+	})
+	.then((group) => {
+		if(group !== null){
+			console.log(group.dataValues.mainUserId , ' -- ', parseInt(id));
+			if(group.dataValues.mainUserId === parseInt(id)){
+				return event.update(req.body, {
+							returning: true,
+							where:{
+								id:eventId
+							}
+						})
+			} else {
+				throw new Error("Nemoze updatovat, nie je to jeho groupa");
+			}
+		} else {
+			throw new Error("Nie je taka groupa");
+		}
+	})
+	.then((response) => {
+		console.log(response[1])
+		if(response[0] == 1 ){
+			// let obj = event[1][0].dataValues;
+			res.status(200).send(response[1][0].dataValues);
+		} else {
+			throw new Error("chyba pri mazani");
+		}
+	})
+	.catch(error => {
+		res.status(400).send(`error: , ${error}`);
+	});
+
 });
 
 //DELETE EVENT--done

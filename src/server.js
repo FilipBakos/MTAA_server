@@ -3,6 +3,7 @@ const {group, event, user, userGroups, authtoken} = require('../models/');
 const userController = require('../controllers/userController.js');
 const groupController = require('../controllers/groupController.js');
 const eventController = require('../controllers/eventController.js');
+const { check, validationResult } = require('express-validator/check');
 const bcrypt = require('bcrypt');
 
 
@@ -117,6 +118,31 @@ const bcrypt = require('bcrypt');
 /////////////////////////	raw: true,
 ///////////////////////
 
+// user.create({
+// 	name: "FilipBakos",
+// 	email: "asd@gmail.com",
+// 	password: "absfgasdfa"
+// }).then((user) => {
+// 	console.log("vytvorilo")
+// }).catch(error => {
+// 	error.errors.forEach((item) => {
+// 	  console.log(item.message);
+// 	})
+// })
+
+// event.create({
+// 	name: "asd",
+// 	description: "absfg",
+// 	link_data: "",
+// 	date: 1552021784
+// }).then((user) => {
+// 	console.log("vytvorilo")
+// }).catch(error => {
+// 	console.log(error)
+	// error.errors.forEach((item) => {
+	//   console.log(item.message);
+	// })
+// })
 
 
 // userGroups.findOrCreate({
@@ -136,23 +162,43 @@ const port = 3000;
 app.use(express.json());
 
 //CREATE USER - done
-app.post('/user/register', (req, res) => {
+app.post('/user/register',[
+	check('name').isLength({ min: 5 }),
+	check('email').isEmail(),
+	check('password').isLength({ min: 6 }),
+	], (req, res) => {
 
-	bcrypt.hash(req.body.password, 10,(err, hash) => {
-	  req.body.password = hash;
-	  //Najskor vytvori usera a potom groupu a priradi jej main usera
-	  user.create(req.body)
-	  .then((user) => {
-		  	group.create({
-				name: req.body.name + " main",
-				description: req.body.name + " main group",
-				mainUserId: user.dataValues.id,
-				main: true
-			}).then((group) => {
-				groupController.createAssociation(group.dataValues.id, user.dataValues.id, res);
-			}).catch(error => console.log(error));
-	  }).catch(error => console.log(error));
-	});
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		res.status(422).json({ errors: errors.array() });
+	} else {
+		bcrypt.hash(req.body.password, 10,(err, hash) => {
+			req.body.password = hash;
+			//Najskor vytvori usera a potom groupu a priradi jej main usera
+			user.findAll({
+				where:{
+					name: req.body.name
+				}
+			})
+			.then((users) => {
+				if(users.length > 0){
+					throw new Error("Taky user uz existuje")
+				} else {
+					return user.create(req.body)
+				}
+			})
+			.then((user) => {
+			  	group.create({
+					name: req.body.name + " main",
+					description: req.body.name + " main group",
+					mainUserId: user.dataValues.id,
+					main: true
+				}).then((group) => {
+					groupController.createAssociation(group.dataValues.id, user.dataValues.id, res);
+				}).catch(error => console.log(error));
+			}).catch(error => res.status(400).send(`Error: ${error}`));
+		});
+	}	
 });
 
 //LOGIN USER - done
@@ -272,50 +318,62 @@ app.put('/user/:id/connect', (req, res) => {
 
 
 //CREATE EVENT -done
-app.post('/event/create', (req, res) => {
-	const token = req.headers.authorization;
-	const id = req.headers.id;
-	userController.isLogged(id, token)
-	.then((result) => {
-		return group.findAll({
-			where:{
-				id: req.body.groupId,
-				mainUserId: id
-			}
-		})
-		
-	}, (error) => {
-        throw new Error(error);
-    })
-    .then((group) => {
-    	if(group.length > 0){
-    		return event.findAll({
-    			where: {
-    				name: req.body.name,
-    				date: req.body.date
-    			}
-    		})
-    	} else {
-    		throw new Error("Nie je taka groupa alebo nie je jej Owner");
-    	}
-    })
-    .then((events) => {
-    	if(events.length === 0){
-			return event.create({
-				name: req.body.name,
-				date: req.body.date,
-				description: req.body.description,
-				link_data: '',
-				groupId: req.body.groupId
+app.post('/event/create',[
+	check('name').isLength({ min: 5 }),
+	check('description').isLength({ min: 5 }),
+	check('groupId').isInt(),
+	], (req, res) => {
+
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		res.status(422).json({ errors: errors.array() });
+	} else {
+		const token = req.headers.authorization;
+		const id = req.headers.id;
+		userController.isLogged(id, token)
+		.then((result) => {
+			return group.findAll({
+				where:{
+					id: req.body.groupId,
+					mainUserId: id
+				}
 			})
-    	} else {
-    		throw new Error("Uz je taky event");
-    	}
-    })
-	.then((event) => {
-		res.status(200).send("OK");
-	})
-	.catch(error => res.status(400).send(`error: , ${error}`));
+			
+		}, (error) => {
+	        throw new Error(error);
+	    })
+	    .then((group) => {
+	    	if(group.length > 0){
+	    		return event.findAll({
+	    			where: {
+	    				name: req.body.name,
+	    				date: req.body.date,
+	    				groupId: req.body.groupId
+	    			}
+	    		})
+	    	} else {
+	    		throw new Error("Nie je taka groupa alebo nie je jej Owner");
+	    	}
+	    })
+	    .then((events) => {
+	    	if(events.length === 0){
+				return event.create({
+					name: req.body.name,
+					date: req.body.date,
+					description: req.body.description,
+					link_data: '',
+					groupId: req.body.groupId
+				})
+	    	} else {
+	    		throw new Error("Uz je taky event");
+	    	}
+	    })
+		.then((event) => {
+			res.status(201).send("OK");
+		})
+		.catch(error => res.status(400).send(`error: , ${error}`));
+	}
+	
 });
 
 //LIST EVENT - listne vsetky eventy danej groupy - done
@@ -473,30 +531,40 @@ app.post('/user/logout', (req, res) => {
 });
 
 //CREATE GROUP
-app.post('/group/create', (req, res) => {
-	const token = req.headers.authorization;
-	const id = req.headers.id;
-	userController.isLogged(id, token)
-	.then((result) => {
-		return group.create({
-			name: req.body.name,
-			description: req.body.description,
-			mainUserId: id,
-			main: false
+app.post('/group/create',[
+	check('name').isLength({ min: 5 }),
+	check('description').isLength({ min: 5 }),
+	check('groupId').isInt(),
+	], (req, res) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		res.status(422).json({ errors: errors.array() });
+	} else {
+		const token = req.headers.authorization;
+		const id = req.headers.id;
+		userController.isLogged(id, token)
+		.then((result) => {
+			return group.create({
+				name: req.body.name,
+				description: req.body.description,
+				mainUserId: id,
+				main: false
+			})
+		}, (error) => {
+			console.log(error)
+	        throw new Error(error);
+	    })
+	    .then((group) => {
+			return userGroups.create({
+				userId: id,
+				groupId: group.dataValues.id
+			})
 		})
-	}, (error) => {
-		console.log(error)
-        throw new Error(error);
-    })
-    .then((group) => {
-		return userGroups.create({
-			userId: id,
-			groupId: group.dataValues.id
-		})
-	})
-	.then(() => {
-		res.status(200).send('Group was created')
-	}).catch(error => res.status(400).send(`error: , ${error}`));
+		.then(() => {
+			res.status(201).send('Group was created')
+		}).catch(error => res.status(400).send(`error: , ${error}`));
+	}
+	
 });
 
 //LIST GROUP

@@ -6,6 +6,40 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     password: DataTypes.STRING,
     email: DataTypes.STRING
+    // name: {
+    //   type: DataTypes.STRING,
+    //   allowNull:false,
+
+    //   validate: {
+    //     isUnique: true,
+    //     len: {
+    //       args: [5,50],
+    //       msg: "Nedostatocna dlzka mena - aspon 5 znakov"
+    //     },
+    //   }
+    //   // allowNull:false
+    // },
+    // password: {
+    //   type: DataTypes.STRING,
+    //   allowNull:false,
+    //   validate: {
+    //     len: {
+    //       args: [6,50],
+    //       msg: "Nedostatocna dlzka hesla - aspon 6 znakov"
+    //     },
+    //   }
+    //   // allowNull:false
+    // },
+    // email: {
+    //   type: DataTypes.STRING,
+    //   validate: {
+    //     isEmail: {
+    //       args: true,
+    //       msg: "Nie je to email"
+    //     }
+    //   }
+      
+    // }
   }, {});
   user.associate = function(models) {
     // associations can be defined here

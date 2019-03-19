@@ -25,7 +25,7 @@ const createAssociation = (groupId, userId, res) => {
 		userId,
 		groupId
 	})
-	.then(() => res.status(200).send(
+	.then(() => res.status(201).send(
 				  'Registered'
 				))
 	.catch(error => res.status(400).send(

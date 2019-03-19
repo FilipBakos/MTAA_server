@@ -47,12 +47,36 @@ const authenticate = function (username, password, res) {
 				);
 	  	 	}
 	  	 	if (result === true) {
-	  	 		getGroups(userResponse[0].usersGroups, userResponse[0].id, (groups) => {
-	  	 			authorize(userResponse[0].dataValues.id, (obj) => {
-	  	 				obj.name = username,
-	  	 				obj.groups = groups,
-	  	 				res.status(200).send(obj);
-	  	 			}) 
+
+	  	 		authtoken.findAll({
+	  	 			where: {
+	  	 				userId: userResponse[0].dataValues.id
+	  	 			}
+	  	 		})
+	  	 		.then((result) => {
+	  	 			if (result.length > 0){
+	  	 				authtoken.destroy({
+	  	 					where: {
+	  	 						userId: userResponse[0].dataValues.id
+	  	 					}
+	  	 				}).then((result) => {
+	  	 					getGroups(userResponse[0].usersGroups, userResponse[0].id, (groups) => {
+				  	 			authorize(userResponse[0].dataValues.id, (obj) => {
+				  	 				obj.name = username,
+				  	 				obj.groups = groups,
+				  	 				res.status(200).send(obj);
+				  	 			}) 
+				  	 		})
+	  	 				})
+	  	 			} else {
+	  	 				getGroups(userResponse[0].usersGroups, userResponse[0].id, (groups) => {
+			  	 			authorize(userResponse[0].dataValues.id, (obj) => {
+			  	 				obj.name = username,
+			  	 				obj.groups = groups,
+			  	 				res.status(200).send(obj);
+			  	 			}) 
+			  	 		})
+	  	 			}
 	  	 		})
 	  	 	}
 	  	});

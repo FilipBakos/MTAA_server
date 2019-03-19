@@ -289,7 +289,19 @@ app.post('/event/create', (req, res) => {
     })
     .then((group) => {
     	if(group.length > 0){
-    		return event.create({
+    		return event.findAll({
+    			where: {
+    				name: req.body.name,
+    				date: req.body.date
+    			}
+    		})
+    	} else {
+    		throw new Error("Nie je taka groupa alebo nie je jej Owner");
+    	}
+    })
+    .then((events) => {
+    	if(events.length === 0){
+			return event.create({
 				name: req.body.name,
 				date: req.body.date,
 				description: req.body.description,
@@ -297,7 +309,7 @@ app.post('/event/create', (req, res) => {
 				groupId: req.body.groupId
 			})
     	} else {
-    		throw new Error("Nie je taka groupa alebo nie je jej Owner");
+    		throw new Error("Uz je taky event");
     	}
     })
 	.then((event) => {
@@ -313,13 +325,25 @@ app.get('/event/:id/list', (req, res) => {
 	const groupId = req.params.id;
 	userController.isLogged(id, token)
 	.then((result) => {
-		return event.findAll({
-			where:{
-				groupId: groupId
+		return userGroups.findAll({
+			where: {
+				groupId: groupId,
+				userId: id
 			}
 		})
 	}, (error) => {
         throw new Error(error);
+    })
+    .then((result) => {
+    	if(result.length === 1) {
+			return event.findAll({
+				where:{
+					groupId: groupId
+				}
+			})
+    	} else {
+    		throw new Error("nie je pripojeny k danej groupe")
+    	}
     })
 	.then((events) => {
 		eventController.getEvents(events, (obj) => {

@@ -72,7 +72,7 @@ const isLogged = function (id, token, res){
 		})
 		.then((result) => {
 			if(result.length === 0) {
-				resolve(false);
+				reject('not logged in');
 			} else resolve(true);
 		})
 		.catch(error => {
@@ -112,6 +112,7 @@ const getGroups = (groups, callback) => {
 	  	name: group.dataValues.name,
 	  	description: group.dataValues.description,
 	  	mainUserId: group.dataValues.mainUserId,
+	  	main: group.dataValues.main
 	  }
 	  groupsShort.push(obj);
 	});

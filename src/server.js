@@ -95,6 +95,8 @@ const bcrypt = require('bcrypt');
 // 	description: 'Fiit skupina',
 // 	main: false
 // }).then(() => console.log("Worked"));
+// 
+// event.findByPk(5).then((event) => console.log(event));
 
 
 //authtoken.generate(1);
@@ -110,19 +112,18 @@ app.post('/user/register', (req, res) => {
 
 	bcrypt.hash(req.body.password, 10,(err, hash) => {
 	  req.body.password = hash;
-	  //Najskor vytvori groupu a potom user a priradi mu tu groupu
-	  group.create({
-	  	name: req.body.name + " main",
-	  	description: req.body.name + " main group"
-	  }).then((group) => {
-	  	req.body.mainGroupId = group.dataValues.id;
-	  	user.create(req.body)
-	  	.then((user) => {
-	  		groupController.createAssociation(group.dataValues.id, user.dataValues.id, res);
-	  	})
-	  	.catch(error => console.log(error));
+	  //Najskor vytvori usera a potom groupu a priradi jej main usera
+	  user.create(req.body)
+	  .then((user) => {
+		  	group.create({
+				name: req.body.name + " main",
+				description: req.body.name + " main group",
+				mainUserId: user.dataValues.id,
+				main: true
+			}).then((group) => {
+				groupController.createAssociation(group.dataValues.id, user.dataValues.id, res);
+			}).catch(error => console.log(error));
 	  }).catch(error => console.log(error));
-	  
 	});
 });
 
@@ -154,11 +155,52 @@ app.use(function(req, res, next) {
 });
 
 
-
-//DELETE GROUP
+//DELETE GROUP - done
 app.delete('/group/:id/delete', (req, res) => {
-	console.log(req.body);
-	res.send(`Deleting group with id: ${req.params.id.toString()}`);
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	const groupId = req.params.id;
+	userController.isLogged(id, token)
+	.then((result) => {
+		console.log('Tu som teraz ??? ')
+		return group.destroy({
+			where:{
+				id: groupId,
+				mainUserId: id,
+				main: false
+			}
+		})
+	}, (error) => {
+        throw new Error(error);
+    })
+	.then((group) => {
+		 console.log('Tu som sa dostal 1')
+		if(group === 1){
+			return event.destroy({
+				where:{
+					groupId: groupId
+				}
+			})
+		} else {
+			throw new Error("Chyba pri mazani groupy")
+		}
+	})
+	.then((event) => {
+		console.log('Tu som2')
+		return userGroups.destroy({
+			where:{
+				groupId: groupId
+			}
+		})
+	})
+	.then((response) => {
+			console.log('Tu som1')
+			res.status(200).send("Vsetko OK");
+	})
+	.catch(error => {
+		res.status(400).send(`error: , ${error}`);
+	});
+
 });
 
 
@@ -168,23 +210,20 @@ app.post('/event/create', (req, res) => {
 	const id = req.headers.id;
 	userController.isLogged(id, token)
 	.then((result) => {
-		if(result) {
-			event.create({
-				name: req.body.name,
-				date: req.body.date,
-				description: req.body.description,
-				link_data: '',
-				groupId: req.body.groupId
-			})
-			.then((event) => {
-				res.status(200).send("OK");
-			})
-			.catch(error => console.log(error));
-		}
-		else {
-			res.status(400).send('Not logged in');
-		}
-	});
+		return event.create({
+			name: req.body.name,
+			date: req.body.date,
+			description: req.body.description,
+			link_data: '',
+			groupId: req.body.groupId
+		})
+	}, (error) => {
+        throw new Error(error);
+    })
+	.then((event) => {
+		res.status(200).send("OK");
+	})
+	.catch(error => res.status(400).send(`error: , ${error}`));
 });
 
 //LIST EVENT - listne vsetky eventy danej groupy - done
@@ -194,25 +233,21 @@ app.get('/event/:id/list', (req, res) => {
 	const groupId = req.params.id;
 	userController.isLogged(id, token)
 	.then((result) => {
-		if(result) {
-			event.findAll({
-				where:{
-					groupId: groupId
-				}
-			}).then((events) => {
-				if ( events.length > 0 ) {
-					eventController.getEvents(events, (obj) => {
-						res.status(200).send(obj)
-					})
-				} else {
-					res.status(400).send('Cvosi sa porantalo');
-				}
-			})
-		}
-		else {
-			res.status(400).send('Not logged in');
-		}
-	});
+		return event.findAll({
+			where:{
+				groupId: groupId
+			}
+		})
+	}, (error) => {
+        throw new Error(error);
+    })
+	.then((events) => {
+		eventController.getEvents(events, (obj) => {
+			res.status(200).send(obj)
+		})
+	})
+	.catch(error => res.status(400).send(`error: , ${error}`));
+	
 });
 
 //UPDATE EVENT
@@ -221,10 +256,51 @@ app.post('/event/:id/update', (req, res) => {
 	res.send(`Updating event with id: ${req.params.id.toString()}`);
 });
 
-//DELETE EVENT
+//DELETE EVENT--done
 app.delete('/event/:id/delete', (req, res) => {
-	console.log(req.body);
-	res.send(`Deleting event with id: ${req.params.id.toString()}`);
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	const eventId = req.params.id;
+	userController.isLogged(id, token)
+	.then((result) => {
+		return event.findByPk(eventId)
+	}, (error) => {
+        throw new Error(error);
+    })
+	.then((event) => {
+		if(event !== null){
+			return group.findByPk(event.dataValues.groupId)
+		} else {
+			throw new Error("Nie je taky event")
+		}
+	})
+	.then((group) => {
+		if(group !== null){
+			console.log(group.dataValues.mainUserId , ' -- ', parseInt(id));
+			if(group.dataValues.mainUserId === parseInt(id)){
+				return event.destroy({
+					where:{
+						id:eventId
+					}
+				})
+			} else {
+				throw new Error("Nemoze mazat, nie je to jeho groupa");
+			}
+		} else {
+			throw new Error("Nie je taka groupa");
+		}
+	})
+	.then((response) => {
+		if(response === 1 ){
+			res.status(200).send('event bol vymazany');
+		} else {
+			throw new Error("chyba pri mazani");
+		}
+	})
+	.catch(error => {
+		res.status(400).send(`error: , ${error}`);
+	});
+
 });
 
 
@@ -253,25 +329,26 @@ app.post('/group/create', (req, res) => {
 	const token = req.headers.authorization;
 	const id = req.headers.id;
 	userController.isLogged(id, token)
-		.then((result) => {
-			if(result) {
-				group.create({
-					name: req.body.name,
-					description: req.body.description,
-					mainUserId: id
-				}).then((group) => {
-					userGroups.create({
-						userId: id,
-						groupId: group.dataValues.id
-					}).then(() => {
-						res.status(200).send('Group was created')
-					}).catch(error => res.status(400).send(error))
-				}).catch(error => res.status(400).send(error))
-			}
-			else {
-				res.status(400).send('Not logged in');
-			}
-		});
+	.then((result) => {
+		return group.create({
+			name: req.body.name,
+			description: req.body.description,
+			mainUserId: id,
+			main: false
+		})
+	}, (error) => {
+		console.log(error)
+        throw new Error(error);
+    })
+    .then((group) => {
+		return userGroups.create({
+			userId: id,
+			groupId: group.dataValues.id
+		})
+	})
+	.then(() => {
+		res.status(200).send('Group was created')
+	}).catch(error => res.status(400).send(`error: , ${error}`));
 });
 
 //LIST GROUP
@@ -280,12 +357,9 @@ app.get('/group/list', (req, res) => {
 	const id = req.headers.id;
 	userController.isLogged(id, token)
 	.then((result) => {
-		if(result) {
 			groupController.getAllGroupsByUser(id, res);
-		}
-		else {
-			res.status(400).send('Not logged in');
-		}
-	});
+	}, (error) => {
+		res.status(400).send('Not logged in');
+	}).catch(error => res.status(400).send(`error: , ${error}`));
 });
 

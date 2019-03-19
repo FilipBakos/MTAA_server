@@ -119,15 +119,15 @@ const bcrypt = require('bcrypt');
 
 
 
-userGroups.findOrCreate({
-	raw:true,
-	where: {
-		groupId: 50,
-		userId: 1
-	}
-}).then((result) => {
-	console.log(result);
-})
+// userGroups.findOrCreate({
+// 	raw:true,
+// 	where: {
+// 		groupId: 50,
+// 		userId: 1
+// 	}
+// }).then((result) => {
+// 	console.log(result);
+// })
 
 var app = express();
 
@@ -235,13 +235,13 @@ app.put('/user/:id/connect', (req, res) => {
 	const token = req.headers.authorization;
 	const id = req.headers.id;
 	const groupId = req.params.id;
-	let groupResult;
 	userController.isLogged(id, token)
 	.then((result) => {
 		return group.findAll({
 			raw: true,
 			where: {
-				id: groupId
+				id: groupId,
+				main: false
 			}
 		})
 	}, (error) => {
@@ -249,20 +249,21 @@ app.put('/user/:id/connect', (req, res) => {
     })
     .then((group) => {
     	console.log(group)
-   //  	if(group.length ===1 ){
-   //  		groupResult = group;
-   //  		return userGroups.findAll({
-			// 	raw: true,
-			// 	where:{
-			// 		groupId: groupId,
-			// 		userId: id
-			// 	}
-			// })
-   //  	}
+    	if(group.length === 1 ){
+    		return userGroups.findOrCreate({
+						raw:true,
+						where: {
+							groupId: groupId,
+							userId: id
+						}
+					})
+    	} else {
+    		throw new Error("Nie je taka groupa");
+    	}
     })
-    // .then((result) => {
-    // 	res.status(200).send('Pripojeny na DB');
-    // })
+    .then((result) => {
+    	res.status(200).send('Connected');
+    })
 	.catch(error => {
 		res.status(400).send(`error: , ${error}`);
 	});

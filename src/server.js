@@ -1,10 +1,24 @@
 var express = require('express')
+const bcrypt = require('bcrypt');
+const multer = require('multer');
+var path = require('path');
+const { check, validationResult } = require('express-validator/check');
+
+
 const {group, event, user, userGroups, authtoken} = require('../models/');
 const userController = require('../controllers/userController.js');
 const groupController = require('../controllers/groupController.js');
 const eventController = require('../controllers/eventController.js');
-const { check, validationResult } = require('express-validator/check');
-const bcrypt = require('bcrypt');
+
+const storage = multer.diskStorage({
+	destination: function(req, file, cb){
+		cb(null,'./images/');
+	},
+	filename: function(req, file, cb) {
+		cb(null, file.originalname)
+	}
+})
+const upload = multer({storage: storage})
 
 
 // VYTVORI GROUPU A AJ EVENT
@@ -322,9 +336,10 @@ app.post('/event/create',[
 	check('name').isLength({ min: 5 }),
 	check('description').isLength({ min: 5 }),
 	check('groupId').isInt(),
-	], (req, res) => {
+	], upload.single('image'), (req, res) => {
 
-	const errors = validationResult(req);
+	const errors = validationResult(req.body);
+
 	if (!errors.isEmpty()) {
 		res.status(422).json({ errors: errors.array() });
 	} else {
@@ -362,7 +377,8 @@ app.post('/event/create',[
 					date: req.body.date,
 					description: req.body.description,
 					link_data: '',
-					groupId: req.body.groupId
+					groupId: req.body.groupId,
+					link_data: req.file.path
 				})
 	    	} else {
 	    		throw new Error("Uz je taky event");
@@ -512,9 +528,26 @@ app.delete('/event/:id/delete', (req, res) => {
 
 
 //GET DATA
-app.post('/data/get', (req, res) => {
-	console.log(req.body);
-	res.send("Getting data");
+app.get('/data/get/:id', (req, res) => {
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	const eventId = req.params.id;
+	userController.isLogged(id, token)
+	.then((result) => {
+		return event.findByPk(eventId)
+	}, (error) => {
+        throw new Error(error);
+    })
+    .then((event) => {
+    	if(event !== null) {
+    		if(event.dataValues.link_data){
+    			res.sendFile(path.join(__dirname, "../", event.dataValues.link_data));
+    		}
+    	}
+    })
+	.catch(error => {
+		res.status(400).send(`error: , ${error}`);
+	});
 });
 
 app.listen(port, () => {

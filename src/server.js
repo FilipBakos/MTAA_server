@@ -277,15 +277,28 @@ app.post('/event/create', (req, res) => {
 	const id = req.headers.id;
 	userController.isLogged(id, token)
 	.then((result) => {
-		return event.create({
-			name: req.body.name,
-			date: req.body.date,
-			description: req.body.description,
-			link_data: '',
-			groupId: req.body.groupId
+		return group.findAll({
+			where:{
+				id: req.body.groupId,
+				mainUserId: id
+			}
 		})
+		
 	}, (error) => {
         throw new Error(error);
+    })
+    .then((group) => {
+    	if(group.length > 0){
+    		return event.create({
+				name: req.body.name,
+				date: req.body.date,
+				description: req.body.description,
+				link_data: '',
+				groupId: req.body.groupId
+			})
+    	} else {
+    		throw new Error("Nie je taka groupa alebo nie je jej Owner");
+    	}
     })
 	.then((event) => {
 		res.status(200).send("OK");

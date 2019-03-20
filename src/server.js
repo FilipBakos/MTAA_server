@@ -542,6 +542,9 @@ app.get('/data/get/:id', (req, res) => {
     		if(event.dataValues.link_data){
     			res.sendFile(path.join(__dirname, "../", event.dataValues.link_data));
     		}
+    	} 
+    	else {
+    		throw new Error("Nie je taky event")
     	}
     })
 	.catch(error => {
@@ -575,15 +578,26 @@ app.post('/group/create',[
 		const id = req.headers.id;
 		userController.isLogged(id, token)
 		.then((result) => {
-			return group.create({
-				name: req.body.name,
-				description: req.body.description,
-				mainUserId: id,
-				main: false
+			return group.findAll({
+				where: {
+					name: req.body.name
+				}
 			})
 		}, (error) => {
 			console.log(error)
 	        throw new Error(error);
+	    })
+	    .then((groups) => {
+	    	if(groups.length === 0){
+				return group.create({
+					name: req.body.name,
+					description: req.body.description,
+					mainUserId: id,
+					main: false
+				})
+	    	} else {
+	    		throw new Error('Groupa uz existuje');
+	    	}
 	    })
 	    .then((group) => {
 			return userGroups.create({

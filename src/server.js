@@ -376,7 +376,6 @@ app.post('/event/create',[
 					name: req.body.name,
 					date: req.body.date,
 					description: req.body.description,
-					link_data: '',
 					groupId: req.body.groupId,
 					link_data: req.file.path
 				})
@@ -566,8 +565,7 @@ app.post('/user/logout', (req, res) => {
 //CREATE GROUP
 app.post('/group/create',[
 	check('name').isLength({ min: 5 }),
-	check('description').isLength({ min: 5 }),
-	check('groupId').isInt(),
+	check('description').isLength({ min: 5 })
 	], (req, res) => {
 	const errors = validationResult(req);
 	if (!errors.isEmpty()) {

@@ -93,7 +93,7 @@ const upload = multer({storage: storage})
 
 // user.findAll({
 // 		where: {
-// 	  		name: 'filip'
+// 	  		name: 'filip184'
 // 			},
 // 	    include: [{
 // 	    	as: 'usersGroups',

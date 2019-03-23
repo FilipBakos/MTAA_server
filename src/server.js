@@ -177,7 +177,7 @@ app.use(express.json());
 
 //CREATE USER - done
 app.post('/user/register',[
-	check('name').isLength({ min: 5 }),
+	check('username').isLength({ min: 5 }),
 	check('email').isEmail(),
 	check('password').isLength({ min: 6 }),
 	], (req, res) => {
@@ -191,7 +191,7 @@ app.post('/user/register',[
 			//Najskor vytvori usera a potom groupu a priradi jej main usera
 			user.findAll({
 				where:{
-					name: req.body.name
+					name: req.body.username
 				}
 			})
 			.then((users) => {
@@ -203,8 +203,8 @@ app.post('/user/register',[
 			})
 			.then((user) => {
 			  	group.create({
-					name: req.body.name + " main",
-					description: req.body.name + " main group",
+					name: req.body.username + " main",
+					description: req.body.username + " main group",
 					mainUserId: user.dataValues.id,
 					main: true
 				}).then((group) => {

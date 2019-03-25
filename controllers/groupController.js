@@ -13,8 +13,11 @@ const getAllGroupsByUser = (userId, res) => {
 	    }]
 	})
 	.then((result) => {
-		userController.getGroups(result[0].usersGroups,userId, (groups) => {
-			res.status(200).send(groups)
+		userController.getGroups(result[0].usersGroups,userId, (groupsOwned, groupsConnected) => {
+			let obj = {};
+			obj.groupsOwned = groupsOwned,
+			obj.groupsConnected = groupsConnected,
+			res.status(200).send(obj)
 		})
 	})
 	.catch(error => console.log(error))

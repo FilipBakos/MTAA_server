@@ -60,19 +60,21 @@ const authenticate = function (username, password, res) {
 	  	 						userId: userResponse[0].dataValues.id
 	  	 					}
 	  	 				}).then((result) => {
-	  	 					getGroups(userResponse[0].usersGroups, userResponse[0].id, (groups) => {
+	  	 					getGroups(userResponse[0].usersGroups, userResponse[0].id, (groupsOwned, groupsConnected) => {
 				  	 			authorize(userResponse[0].dataValues.id, (obj) => {
 				  	 				obj.name = username,
-				  	 				obj.groups = groups,
+				  	 				obj.groupsOwned = groupsOwned,
+				  	 				obj.groupsConnected = groupsConnected,
 				  	 				res.status(200).send(obj);
 				  	 			}) 
 				  	 		})
 	  	 				})
 	  	 			} else {
-	  	 				getGroups(userResponse[0].usersGroups, userResponse[0].id, (groups) => {
+	  	 				getGroups(userResponse[0].usersGroups, userResponse[0].id, (groupsOwned, groupsConnected) => {
 			  	 			authorize(userResponse[0].dataValues.id, (obj) => {
 			  	 				obj.name = username,
-			  	 				obj.groups = groups,
+			  	 				obj.groupsOwned = groupsOwned,
+				  	 			obj.groupsConnected = groupsConnected,
 			  	 				res.status(200).send(obj);
 			  	 			}) 
 			  	 		})
@@ -147,7 +149,7 @@ const getGroups = (groups, userId, callback) => {
 		groupsOwned,
 		groupsConnected
 	}
-	callback(obj);
+	callback(groupsOwned, groupsConnected);
 	return obj;
 }
 

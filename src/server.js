@@ -177,7 +177,7 @@ app.use(express.json());
 
 //CREATE USER - done
 app.post('/user/register',[
-	check('username').isLength({ min: 5 }),
+	check('name').isLength({ min: 5 }),
 	check('email').isEmail(),
 	check('password').isLength({ min: 6 }),
 	], (req, res) => {
@@ -191,7 +191,7 @@ app.post('/user/register',[
 			//Najskor vytvori usera a potom groupu a priradi jej main usera
 			user.findAll({
 				where:{
-					name: req.body.username
+					name: req.body.name
 				}
 			})
 			.then((users) => {
@@ -203,8 +203,8 @@ app.post('/user/register',[
 			})
 			.then((user) => {
 			  	group.create({
-					name: req.body.username + " main",
-					description: req.body.username + " main group",
+					name: req.body.name + " main",
+					description: req.body.name + " main group",
 					mainUserId: user.dataValues.id,
 					main: true
 				}).then((group) => {
@@ -217,17 +217,17 @@ app.post('/user/register',[
 
 //LOGIN USER - done
 app.post('/user/login', (req, res) => {
-	const { username, password } = req.body;
+	const { name, password } = req.body;
 
-	if (!username || !password) {
+	if (!name || !password) {
 	  return res.status(400).send(
-	    'No username or password'
+	    'No name or password'
 	  );
 	}
 
-	console.log(username);
+	console.log(name);
 
-	userController.authenticate(username, password, res);
+	userController.authenticate(name, password, res);
 	// console.log(req.body);
 	// res.send("Logging in");
 });

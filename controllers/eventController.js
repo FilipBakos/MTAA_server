@@ -39,11 +39,23 @@ const getEvents = (events, callback) => {
 	return eventsShort;
 }
 
+const saveImage = (file, name) => {
+	return new Promise((resolve, reject) => {
+
+		let image = file.replace(/^data:image\/jpeg;base64,/, "");
+	    require("fs").writeFile(__dirname + "\\..\\images\\" + name + ".jpg", image, 'base64', function(err) {
+			if(err) reject(err)
+			else resolve(`images/${name}.jpg`);
+		});
+	});
+}
+
 
 
 
 module.exports = {
 	getAllEventsByGroup,
-	getEvents
+	getEvents,
+	saveImage
 }
 

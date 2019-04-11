@@ -173,7 +173,8 @@ var app = express();
 
 const port = 3000; 
 
-app.use(express.json());
+app.use(express.json({limit: '50mb'}));
+// app.use(express.bodyParser({limit: '50mb'}));
 
 //CREATE USER - done
 app.post('/user/register',[
@@ -330,15 +331,15 @@ app.put('/user/:id/connect', (req, res) => {
 
 });
 
-
 //CREATE EVENT -done
 app.post('/event/create',[
 	check('name').isLength({ min: 5 }),
 	check('description').isLength({ min: 5 }),
 	check('groupId').isInt(),
-	], upload.single('image'), (req, res) => {
+	],(req, res) => {
 
 	const errors = validationResult(req.body);
+	let imagePath = '';
 
 	if (!errors.isEmpty()) {
 		res.status(422).json({ errors: errors.array() });
@@ -347,6 +348,13 @@ app.post('/event/create',[
 		const id = req.headers.id;
 		userController.isLogged(id, token)
 		.then((result) => {
+			console.log(req.body)
+			return eventController.saveImage(req.body.image, req.body.name)
+		}, (error) => {
+	        throw new Error(error);
+	    })
+		.then((result) => {
+			imagePath = result;
 			return group.findAll({
 				where:{
 					id: req.body.groupId,
@@ -377,7 +385,7 @@ app.post('/event/create',[
 					date: req.body.date,
 					description: req.body.description,
 					groupId: req.body.groupId,
-					link_data: req.file.path
+					link_data: imagePath
 				})
 	    	} else {
 	    		throw new Error("Uz je taky event");
@@ -390,6 +398,67 @@ app.post('/event/create',[
 	}
 	
 });
+
+
+// //CREATE EVENT -done
+// app.post('/event/create',[
+// 	check('name').isLength({ min: 5 }),
+// 	check('description').isLength({ min: 5 }),
+// 	check('groupId').isInt(),
+// 	], upload.single('image'), (req, res) => {
+
+// 	const errors = validationResult(req.body);
+
+// 	if (!errors.isEmpty()) {
+// 		res.status(422).json({ errors: errors.array() });
+// 	} else {
+// 		const token = req.headers.authorization;
+// 		const id = req.headers.id;
+// 		userController.isLogged(id, token)
+// 		.then((result) => {
+// 			return group.findAll({
+// 				where:{
+// 					id: req.body.groupId,
+// 					mainUserId: id
+// 				}
+// 			})
+			
+// 		}, (error) => {
+// 	        throw new Error(error);
+// 	    })
+// 	    .then((group) => {
+// 	    	if(group.length > 0){
+// 	    		return event.findAll({
+// 	    			where: {
+// 	    				name: req.body.name,
+// 	    				date: req.body.date,
+// 	    				groupId: req.body.groupId
+// 	    			}
+// 	    		})
+// 	    	} else {
+// 	    		throw new Error("Nie je taka groupa alebo nie je jej Owner");
+// 	    	}
+// 	    })
+// 	    .then((events) => {
+// 	    	if(events.length === 0){
+// 				return event.create({
+// 					name: req.body.name,
+// 					date: req.body.date,
+// 					description: req.body.description,
+// 					groupId: req.body.groupId,
+// 					link_data: req.file.path
+// 				})
+// 	    	} else {
+// 	    		throw new Error("Uz je taky event");
+// 	    	}
+// 	    })
+// 		.then((event) => {
+// 			res.status(201).send("OK");
+// 		})
+// 		.catch(error => res.status(400).send(`error: , ${error}`));
+// 	}
+	
+// });
 
 //LIST EVENT - listne vsetky eventy danej groupy - done
 app.get('/event/:id/list', (req, res) => {

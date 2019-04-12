@@ -474,6 +474,7 @@ app.get('/event/:id/list', (req, res) => {
 			}
 		})
 	}, (error) => {
+		console.log(error)
         throw new Error(error);
     })
     .then((result) => {
@@ -488,11 +489,14 @@ app.get('/event/:id/list', (req, res) => {
     	}
     })
 	.then((events) => {
-		eventController.getEvents(events, (obj) => {
+		eventController.getEvents(events, groupId, (obj) => {
 			res.status(200).send(obj)
 		})
 	})
-	.catch(error => res.status(400).send(`error: , ${error}`));
+	.catch(error => {
+		console.log(error)
+		res.status(400).send(`error: , ${error}`)
+	});
 	
 });
 
@@ -608,8 +612,11 @@ app.get('/data/get/:id', (req, res) => {
     })
     .then((event) => {
     	if(event !== null) {
-    		if(event.dataValues.link_data){
+    		if(event.dataValues.link_data !== ''){
     			res.sendFile(path.join(__dirname, "../", event.dataValues.link_data));
+    		}
+    		else {
+    			throw new Error("Nie je obrazok")
     		}
     	} 
     	else {

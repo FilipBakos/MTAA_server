@@ -21,13 +21,14 @@ const getAllEventsByGroup = (userId, res) => {
 }
 
 // oseka z databazy len to co treba
-const getEvents = (events, callback) => {
+const getEvents = (events, groupId, callback) => {
 
 	let eventsShort = [];
 
 	events.forEach((event) => {
 	  let obj = {
 	  	id: event.dataValues.id,
+	  	groupId: groupId,
 	  	name: event.dataValues.name,
 	  	description: event.dataValues.description,
 	  	link_data: event.dataValues.link_data,
@@ -41,7 +42,8 @@ const getEvents = (events, callback) => {
 
 const saveImage = (file, name) => {
 	return new Promise((resolve, reject) => {
-
+		if (file === '') resolve('');
+		
 		let image = file.replace(/^data:image\/jpeg;base64,/, "");
 	    require("fs").writeFile(__dirname + "\\..\\images\\" + name + ".jpg", image, 'base64', function(err) {
 			if(err) reject(err)

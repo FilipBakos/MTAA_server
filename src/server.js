@@ -284,7 +284,8 @@ app.delete('/group/:id/delete', (req, res) => {
 	})
 	.then((response) => {
 			console.log('Tu som1')
-			res.status(200).send("Vsetko OK");
+			let obj = {message: 'Deleted'}
+    	res.status(200).send(Deleted);
 	})
 	.catch(error => {
 		res.status(400).send(`error: , ${error}`);
@@ -323,7 +324,8 @@ app.put('/user/:id/connect', (req, res) => {
     	}
     })
     .then((result) => {
-    	res.status(200).send('Connected');
+    	let obj = {message: 'Connected'}
+    	res.status(200).send(obj);
     })
 	.catch(error => {
 		res.status(400).send(`error: , ${error}`);
@@ -392,7 +394,8 @@ app.post('/event/create',[
 	    	}
 	    })
 		.then((event) => {
-			res.status(201).send("OK");
+		
+			res.status(201).send(event);
 		})
 		.catch(error => res.status(400).send(`error: , ${error}`));
 	}
@@ -586,7 +589,8 @@ app.delete('/event/:id/delete', (req, res) => {
 	})
 	.then((response) => {
 		if(response === 1 ){
-			res.status(200).send('event bol vymazany');
+			let obj = {message: 'event bol vymazany'}
+			res.status(200).send(obj);
 		} else {
 			throw new Error("chyba pri mazani");
 		}
@@ -682,7 +686,8 @@ app.post('/group/create',[
 			})
 		})
 		.then(() => {
-			res.status(201).send('Group was created')
+			let obj = {message: 'Group was created'}
+			res.status(201).send(obj)
 		}).catch(error => res.status(400).send(`error: , ${error}`));
 	}
 	

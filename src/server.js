@@ -554,8 +554,8 @@ app.get('/event/:id/list', (req, res) => {
 		console.log(error)
         throw new Error(error);
     })
-    .then((result) => {
-    	if(result.length === 1) {
+    .then((group) => {
+    	if(group.length === 1) {
 			return event.findAll({
 				where:{
 					groupId: groupId

@@ -1,5 +1,6 @@
 const {group, event, user, userGroups, authtoken} = require('../models/');
 const userController = require('./userController.js');
+const path = require('path');
 
 
 const getAllEventsByGroup = (userId, res) => {
@@ -45,9 +46,10 @@ const saveImage = (file, name, dirPath) => {
 		if (file === '') resolve('');
 		
 		let image = file.replace(/^data:image\/jpeg;base64,/, "");
-	    require("fs").writeFile(dirPath + "\\images\\" + name + ".jpg", image, 'base64', function(err) {
+		let imagePath = path.join(dirPath,"/images/",`${name}.jpg`)
+	    require("fs").writeFile(imagePath, image, 'base64', function(err) {
 			if(err) reject(err)
-			else resolve(`${dirPath}/images/${name}.jpg`);
+			else resolve(imagePath);
 		});
 	});
 }

@@ -40,14 +40,14 @@ const getEvents = (events, groupId, callback) => {
 	return eventsShort;
 }
 
-const saveImage = (file, name) => {
+const saveImage = (file, name, dirPath) => {
 	return new Promise((resolve, reject) => {
 		if (file === '') resolve('');
 		
 		let image = file.replace(/^data:image\/jpeg;base64,/, "");
-	    require("fs").writeFile(__dirname + "\\..\\images\\" + name + ".jpg", image, 'base64', function(err) {
+	    require("fs").writeFile(dirPath + "\\images\\" + name + ".jpg", image, 'base64', function(err) {
 			if(err) reject(err)
-			else resolve(`images/${name}.jpg`);
+			else resolve(`${dirPath}/images/${name}.jpg`);
 		});
 	});
 }

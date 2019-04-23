@@ -176,6 +176,26 @@ const port = 3000;
 app.use(express.json({limit: '50mb'}));
 // app.use(express.bodyParser({limit: '50mb'}));
 
+//User
+//URL: /user/register
+//URL: /user/login
+//URL: /user/:id/connect
+//URL: /user/:id/disconnect
+//URL: /user/logout
+//Group
+//URL: /group/:id/delete
+//URL: /group/create
+//URL: /group/list
+//Event
+//URL: /event/create
+//URL: /event/:id/list
+//URL: /event/:id/update
+//URL: /event/:id/delete
+//Data
+//URL: /data/get/:id
+
+
+
 //CREATE USER - done
 app.post('/user/register',[
 	check('name').isLength({ min: 5 }),
@@ -333,6 +353,58 @@ app.put('/user/:id/connect', (req, res) => {
 
 });
 
+
+
+app.put('/user/:id/disconnect', (req, res) => {
+	const token = req.headers.authorization;
+	const id = req.headers.id;
+	const groupId = req.params.id;
+	userController.isLogged(id, token)
+	.then((result) => {
+		return group.findAll({
+			raw: true,
+			where: {
+				id: groupId
+			}
+		})
+	}, (error) => {
+        throw new Error(error);
+    })
+    .then((group) => {
+    	console.log(group)
+    	if(group.length === 1 ){
+    		// console.log(group[0].mainUserId.toString(), ' === ',id);
+    		if(group[0].mainUserId.toString() === id){
+    			throw new Error("Neda sa odpojit, je to jeho groupa");
+    		} else {
+    			return userGroups.destroy({
+					where: {
+						groupId: groupId,
+						userId: id
+					}
+				})
+    		}
+    	} else {
+    		throw new Error("Nie je taka groupa");
+    	}
+    })
+    .then((result) => {
+    	let obj = {message: 'Disconnected'}
+    	res.status(200).send(obj);
+    })
+	.catch(error => {
+		res.status(400).send(`error: , ${error}`);
+	});
+
+});
+
+//return event.destroy({
+				// 	where:{
+				// 		id:eventId
+				// 	}
+				// })
+
+// console.log("Path: ", path.join(__dirname, "../","\\images\\" + "name" + ".jpg"))
 //CREATE EVENT -done
 app.post('/event/create',[
 	check('name').isLength({ min: 5 }),
@@ -351,7 +423,7 @@ app.post('/event/create',[
 		userController.isLogged(id, token)
 		.then((result) => {
 			console.log(req.body)
-			return eventController.saveImage(req.body.image, req.body.name)
+			return eventController.saveImage(req.body.image, req.body.name, path.join(__dirname, "../"))
 		}, (error) => {
 	        throw new Error(error);
 	    })
@@ -617,7 +689,7 @@ app.get('/data/get/:id', (req, res) => {
     .then((event) => {
     	if(event !== null) {
     		if(event.dataValues.link_data !== ''){
-    			res.sendFile(path.join(__dirname, "../", event.dataValues.link_data));
+    			res.sendFile(path.join(event.dataValues.link_data));
     		}
     		else {
     			throw new Error("Nie je obrazok")

@@ -305,7 +305,7 @@ app.delete('/group/:id/delete', (req, res) => {
 	.then((response) => {
 			console.log('Tu som1')
 			let obj = {message: 'Deleted'}
-    	res.status(200).send(Deleted);
+    	res.status(200).send(obj);
 	})
 	.catch(error => {
 		res.status(400).send(`error: , ${error}`);
@@ -313,6 +313,8 @@ app.delete('/group/:id/delete', (req, res) => {
 
 });
 
+
+// CONNECT GROUP
 app.put('/user/:id/connect', (req, res) => {
 	const token = req.headers.authorization;
 	const id = req.headers.id;
@@ -354,7 +356,7 @@ app.put('/user/:id/connect', (req, res) => {
 });
 
 
-
+// DISCONNECT GROUP
 app.put('/user/:id/disconnect', (req, res) => {
 	const token = req.headers.authorization;
 	const id = req.headers.id;

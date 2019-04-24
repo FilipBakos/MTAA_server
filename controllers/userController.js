@@ -117,8 +117,10 @@ const logout = (id, token, res) => {
 	})
 	.then((result) => {
 		console.log(result)
-		if (result)
-			res.status(200).send('logged out')
+		if (result){
+			let obj = {message: 'logged out'}
+			res.status(200).send(obj)
+		}
 		else 
 			res.status(400).send('Not logged out')
 	})
